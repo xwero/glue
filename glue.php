@@ -7,11 +7,11 @@
      * strings or regular expressions.
      *
      * If the url is a literal it will be transformed to a regular
-	 * expression with an anchored begin and end, and an optional
-	 * end slash.
-	 * 
-	 * The regular expression matches become the arguments of the class
-	 * method. The full url match is always the last argument.
+     * expression with an anchored begin and end, and an optional
+     * end slash.
+     * 
+     * The regular expression matches become the arguments of the class
+     * method. The full url match is always the last argument.
      *
      * Example:
      *
@@ -52,19 +52,19 @@
             krsort($urls);
 
             foreach ($urls as $regex => $class) {
-                
-				if(strpos($regex,'#') === false) $regex = '#^' . $regex . '/?$#';
-				
+
+                if(strpos($regex,'#') === false) $regex = '#^' . $regex . '/?$#';
+
                 if (preg_match($regex, $path, $matches)) {
                     $found = true;
                     if (class_exists($class)) {
                         $obj = new $class;
                         if (method_exists($obj, $method)) {
                             $full_url = array_shift($matches);
-							
-							$matches[] = $full_url;
-							
-							call_user_func_array(array($obj, $method), $matches);
+
+                            $matches[] = $full_url;
+
+                            call_user_func_array(array($obj, $method), $matches);
                         } else {
                             throw new BadMethodCallException("Method, $method, not supported.");
                         }
