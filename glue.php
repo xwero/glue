@@ -6,22 +6,23 @@
      * Provides an easy way to map URLs to classes. URLs can be literal
      * strings or regular expressions.
      *
-     * When the URLs are processed:
-     *      * deliminators (/) are automatically escaped: (\/)
-     *      * The beginning and end are anchored (^ $)
-     *      * An optional end slash is added (/?)
-     *	    * The i option is added for case-insensitive searches
+     * If the url is a literal it will be transformed to a regular
+	 * expression with an anchored begin and end, and an optional
+	 * end slash.
+	 * 
+	 * The regular expression matches become the arguments of the class
+	 * method. The full url match is always the last argument.
      *
      * Example:
      *
      * $urls = array(
      *     '/' => 'index',
-     *     '/page/(\d+) => 'page'
+     *     '/page/(\d+)' => 'page'
      * );
      *
      * class page {
-     *      function GET($matches) {
-     *          echo "Your requested page " . $matches[1];
+     *      function get($number) {
+     *          echo "Your requested page " . $number;
      *      }
      * }
      *
@@ -43,7 +44,7 @@
          */
         static function stick ($urls) {
 
-            $method = strtoupper($_SERVER['REQUEST_METHOD']);
+            $method = strtolower($_SERVER['REQUEST_METHOD']);
             $path = $_SERVER['REQUEST_URI'];
 
             $found = false;
@@ -51,14 +52,19 @@
             krsort($urls);
 
             foreach ($urls as $regex => $class) {
-                $regex = str_replace('/', '\/', $regex);
-                $regex = '^' . $regex . '\/?$';
-                if (preg_match("/$regex/i", $path, $matches)) {
+                
+				if(strpos($regex,'#') === false) $regex = '#^' . $regex . '/?$#';
+				
+                if (preg_match($regex, $path, $matches)) {
                     $found = true;
                     if (class_exists($class)) {
                         $obj = new $class;
                         if (method_exists($obj, $method)) {
-                            $obj->$method($matches);
+                            $full_url = array_shift($matches);
+							
+							$matches[] = $full_url;
+							
+							call_user_func_array(array($obj, $method), $matches);
                         } else {
                             throw new BadMethodCallException("Method, $method, not supported.");
                         }
